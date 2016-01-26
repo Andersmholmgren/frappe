@@ -316,7 +316,7 @@ abstract class Reactable<T> extends Stream<T> {
   ///     // 2
   ///     // 3
   ///     // 4
-  Reactable merge(Stream other);
+  Reactable /*<R>*/ merge /*<R>*/ (Stream other);
 
   /// Combines the events from a stream of streams into a single stream.
   ///

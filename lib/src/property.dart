@@ -144,7 +144,7 @@ class Property<T> extends Reactable<T> {
 
   Property map(convert(T event)) => new Property.fromStream(super.map(convert));
 
-  Property merge(Stream other) => transform(new Merge(other));
+  Property /*<R>*/ merge /*<R>*/ (Stream other) => transform(new Merge(other));
 
   Property mergeAll() => transform(new MergeAll());
 
@@ -177,7 +177,7 @@ class Property<T> extends Reactable<T> {
   Property timeout(Duration timeLimit, {void onTimeout(EventSink sink)}) =>
       new Property.fromStream(super.timeout(timeLimit, onTimeout: onTimeout));
 
-  Property transform(StreamTransformer<T, dynamic> streamTransformer) =>
+  Property/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer) =>
       new Property.fromStream(super.transform(streamTransformer));
 
   Property<T> when(Stream<bool> toggle) => transform(new When(toggle));

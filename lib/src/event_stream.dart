@@ -125,7 +125,7 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream map(convert(T event)) => new EventStream(super.map(convert));
 
-  EventStream merge(Stream other) => transform(new Merge(other));
+  EventStream /*<R>*/ merge /*<R>*/ (Stream other) => transform(new Merge(other));
 
   EventStream mergeAll() => transform(new MergeAll());
 
