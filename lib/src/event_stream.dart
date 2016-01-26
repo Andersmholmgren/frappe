@@ -17,8 +17,8 @@ class EventStream<T> extends StreamView<T> with Reactable<T> {
   }
 
   /// Returns a new stream that contains events from this stream and the [other] stream.
-  EventStream merge(Stream other) {
-    return _asEventStream(new _MergedStream([this, other]));
+  EventStream /*<R>*/ merge /*<R>*/ (Stream other) {
+    return _asEventStream /*<R>*/ (new _MergedStream /*<R>*/ ([this, other]));
   }
 
   /// Returns a new stream that buffers events when the last event in [toggle] is `true`.
@@ -30,7 +30,8 @@ class EventStream<T> extends StreamView<T> with Reactable<T> {
 
   /// Returns a new stream that will begin forwarding events from this stream when the
   /// [future] completes.
-  EventStream<T> skipUntil(Future future) => _asEventStream(new _SkipUntilReactable(this, future).asStream());
+  EventStream<T> skipUntil(Future future) =>
+      _asEventStream(new _SkipUntilReactable(this, future).asStream());
 
   EventStream<T> asStream() {
     return this;
@@ -53,16 +54,19 @@ class EventStream<T> extends StreamView<T> with Reactable<T> {
   /// All methods defined on this class that return an [EventStream] should use this
   /// method when returning their stream. It guarantees that the returned stream will be
   /// the same type of stream as this stream (either broadcast or single-subscription).
-  EventStream _asEventStream(Stream stream) {
-    return new EventStream(isBroadcast ? stream.asBroadcastStream() : stream);
+  EventStream /*<R>*/ _asEventStream /*<R>*/ (Stream /*<R>*/ stream) {
+    return new EventStream /*<R>*/ (
+        isBroadcast ? stream.asBroadcastStream() : stream);
   }
 
   //
   // Wrappers for Dart Stream methods
   //
-  EventStream<T> asBroadcastStream({void onListen(StreamSubscription subscription),
-                                    void onCancel(StreamSubscription subscription)}) {
-    return new EventStream(super.asBroadcastStream(onListen: onListen, onCancel: onCancel));
+  EventStream<T> asBroadcastStream(
+      {void onListen(StreamSubscription subscription),
+      void onCancel(StreamSubscription subscription)}) {
+    return new EventStream(
+        super.asBroadcastStream(onListen: onListen, onCancel: onCancel));
   }
 
   EventStream asyncExpand(Stream convert(T event)) {
@@ -82,7 +86,8 @@ class EventStream<T> extends StreamView<T> with Reactable<T> {
   }
 
   EventStream<T> handleError(Function onError, {bool test(error)}) {
-    return new EventStream(new _ReactableAsStream(super.handleError(onError, test: test)));
+    return new EventStream(
+        new _ReactableAsStream(super.handleError(onError, test: test)));
   }
 
   EventStream map(convert(T event)) {

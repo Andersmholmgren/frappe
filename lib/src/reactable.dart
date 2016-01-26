@@ -11,9 +11,13 @@ abstract class Reactable<T> {
   /// The returned [Property] will only have a value once all the [reactables] contain
   /// a value.
   static Property<Iterable> collect(Iterable<Reactable> reactables) {
-    var values = () => Future.wait(reactables.map((reactable) => reactable.first));
-    EventStream changes = reactables.reduce((value, element) => value.asStream().merge(element.asStream()));
-    return changes.flatMapLatest((_) => new Stream.fromFuture(values())).asProperty();
+    var values =
+        () => Future.wait(reactables.map((reactable) => reactable.first));
+    EventStream changes = reactables
+        .reduce((value, element) => value.asStream().merge(element.asStream()));
+    return changes
+        .flatMapLatest((_) => new Stream.fromFuture(values()))
+        .asProperty();
   }
 
   /// Returns the first element of the reactable.
@@ -61,7 +65,8 @@ abstract class Reactable<T> {
   /// Internally the method cancels its subscription after this element. This means
   /// that non-broadcast streams are closed and cannot be reused after a call to this
   /// method.
-  Future<bool> any(bool test(T element)) => new _ReactableAsStream(this).any(test);
+  Future<bool> any(bool test(T element)) =>
+      new _ReactableAsStream(this).any(test);
 
   /// Returns this reactable as a [Property].
   ///
@@ -88,38 +93,52 @@ abstract class Reactable<T> {
   /// it returned an empty stream.
   ///
   /// The returned stream is a broadcast stream if this stream is.
-  EventStream asyncExpand(Stream convert(T event)) => new EventStream(
-      new _ReactableAsStream(this).asyncExpand(convert));
+  EventStream /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+      new EventStream /*<R>*/ (
+          new _ReactableAsStream /*<R>*/ (this).asyncExpand(convert));
 
-  EventStream asyncMap(dynamic convert(T event)) => new EventStream(new _ReactableAsStream(this).asyncMap(convert));
+  EventStream /*<R>*/ asyncMap /*<R>*/ (/*=R*/ convert(T event)) =>
+      new EventStream /*<R>*/ (
+          new _ReactableAsStream /*<R>*/ (this).asyncMap(convert));
 
-  Future<bool> contains(Object needle) => new _ReactableAsStream(this).contains(needle);
+  Future<bool> contains(Object needle) =>
+      new _ReactableAsStream(this).contains(needle);
 
   /// Returns a new stream that upon forwarding an event from this stream, will ignore
   /// any subsequent events until [duration], after which the last event will be
   /// forwarded.
   ///
   /// The returned stream will not throttle errors.
-  Reactable<T> debounce(Duration duration) => new _DebounceReactable(this, duration);
+  Reactable<T> debounce(Duration duration) =>
+      new _DebounceReactable(this, duration);
 
   /// Delays the delivery of each non-error event from this stream by the given [duration].
   Reactable<T> delay(Duration duration) => new _DelayReactable(this, duration);
 
-  Reactable<T> distinct([bool equals(T previous, T next)]) => new EventStream(
-      new _ReactableAsStream(this).distinct(equals));
+  Reactable<T> distinct([bool equals(T previous, T next)]) =>
+      new EventStream(new _ReactableAsStream(this).distinct(equals));
 
-  Future drain([futureValue]) => new _ReactableAsStream(this).drain(futureValue);
+  Future drain([futureValue]) =>
+      new _ReactableAsStream(this).drain(futureValue);
 
-  Future<bool> every(bool test(T element)) => new _ReactableAsStream(this).every(test);
+  Future<bool> every(bool test(T element)) =>
+      new _ReactableAsStream(this).every(test);
 
-  Reactable expand(Iterable convert(T value)) => new EventStream(new _ReactableAsStream(this).expand(convert));
+  Reactable /*<R>*/ expand /*<R>*/ (Iterable /*<R>*/ convert(T value)) =>
+      new EventStream /*<R>*/ (
+          new _ReactableAsStream /*<R>*/ (this).expand(convert));
 
   Future<dynamic> firstWhere(bool test(T element), {Object defaultValue()}) =>
       new _ReactableAsStream(this).firstWhere(test, defaultValue: defaultValue);
 
-  Future fold(initialValue, combine(previous, T element)) => new _ReactableAsStream(this).fold(initialValue, combine);
+  Future /*<R>*/ fold /*<R>*/ (
+          /*=R*/ initialValue,
+          combine(/*=R*/ previous, T element)) =>
+      new _ReactableAsStream /*<R>*/ (this)
+          .fold /*<R>*/ (initialValue, combine);
 
-  Future forEach(void action(T element)) => new _ReactableAsStream(this).forEach(action);
+  Future forEach(void action(T element)) =>
+      new _ReactableAsStream(this).forEach(action);
 
   /// Returns a property that indicates if this reactable is waiting for an event [other].
   ///
@@ -128,9 +147,10 @@ abstract class Reactable<T> {
   ///
   /// This method is useful for displaying spinners while waiting for AJAX responses.
   Property<bool> isWaitingOn(Reactable other) {
-    return new Property
-        .constant(true).asStream()
-        .merge(new Property.fromFuture(other.first.then((_) => false)).asStream())
+    return new Property.constant(true)
+        .asStream()
+        .merge(
+            new Property.fromFuture(other.first.then((_) => false)).asStream())
         .asProperty();
   }
 
@@ -142,11 +162,15 @@ abstract class Reactable<T> {
 
   /// Adds a subscription to this observable with the same behavior as Dart's
   /// [Stream.listen] method.
-  StreamSubscription<T> listen(void onData(T event), {Function onError, void onDone(), bool cancelOnError});
+  StreamSubscription<T> listen(void onData(T event),
+      {Function onError, void onDone(), bool cancelOnError});
 
-  Reactable map(convert(T event)) => new EventStream(new _ReactableAsStream(this).map(convert));
+  Reactable /*<R>*/ map /*<R>*/ (/*=R*/ convert(T event)) =>
+      new EventStream /*<R>*/ (
+          new _ReactableAsStream /*<R>*/ (this).map(convert));
 
-  Future<T> reduce(T combine(T previous, T element)) => new _ReactableAsStream(this).reduce(combine);
+  Future<T> reduce(T combine(T previous, T element)) =>
+      new _ReactableAsStream(this).reduce(combine);
 
   /// Returns a [Property] where the first value is the [initialValue] and values after
   /// that are the result of [combine].
@@ -155,26 +179,31 @@ abstract class Reactable<T> {
   /// value or the result of the last combine, and the second argument is the next value
   /// in this stream.
   Property<T> scan(T initialValue, T combine(T value, T element)) {
-    return new _ScanReactable(this, initialValue, combine).asPropertyWithInitialValue(initialValue);
+    return new _ScanReactable(this, initialValue, combine)
+        .asPropertyWithInitialValue(initialValue);
   }
 
   /// Returns an [EventStream] that contains events from each stream that is spawned from
   /// [convert].
-  EventStream flatMap(Stream convert(T event)) {
-    return asStream().transform(new StreamTransformer.fromHandlers(handleData: (data, sink) {
+  EventStream /*<R>*/ flatMap /*<R>*/ (Stream /*<R>*/ convert(T event)) {
+    return asStream()
+        .transform(new StreamTransformer.fromHandlers(handleData: (data, sink) {
       convert(data).forEach((event) => sink.add(event));
     }));
   }
 
   /// Returns an [EventStream] that only includes events from the last spawned stream.
-  EventStream flatMapLatest(Stream convert(T event)) => new EventStream(
-      new _ReactableAsStream(new _FlatMapLatestReactable(this, convert)));
+  EventStream /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+      new EventStream /*<R>*/ (new _ReactableAsStream /*<R>*/ (
+          new _FlatMapLatestReactable /*<R>*/ (this, convert)));
 
   /// Returns a new stream that contains events from this stream until the [future]
   /// completes.
-  Reactable<T> takeUntil(Future future) => new _TakeUntilReactable(this, future);
+  Reactable<T> takeUntil(Future future) =>
+      new _TakeUntilReactable(this, future);
 
-  Reactable<T> takeWhile(bool test(T element)) => new EventStream(new _ReactableAsStream(this).takeWhile(test));
+  Reactable<T> takeWhile(bool test(T element)) =>
+      new EventStream(new _ReactableAsStream(this).takeWhile(test));
 
   /// Returns a new reactable that forwards events when the last value for [toggle] is
   /// `true`.
@@ -182,5 +211,6 @@ abstract class Reactable<T> {
   /// Errors will always be forwarded regardless of the value of [toggle].
   Reactable<T> when(Reactable<bool> toggle) => new _WhenReactable(this, toggle);
 
-  Reactable<T> where(bool test(T event)) => new EventStream(new _ReactableAsStream(this).where(test));
+  Reactable<T> where(bool test(T event)) =>
+      new EventStream(new _ReactableAsStream(this).where(test));
 }

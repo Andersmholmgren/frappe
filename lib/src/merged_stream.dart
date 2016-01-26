@@ -1,17 +1,17 @@
 part of frappe;
 
-class _MergedStream extends Stream {
-  Iterable<Stream> _streams;
+class _MergedStream<T> extends Stream<T> {
+  Iterable<Stream<T>> _streams;
 
-  _MergedStream(Iterable<Stream> streams) :
+  _MergedStream(Iterable<Stream<T>> streams) :
     _streams = streams;
 
   @override
-  StreamSubscription listen(void onData(event), {Function onError, void onDone(), bool cancelOnError}) {
-    var subscriptions = <StreamSubscription>[];
+  StreamSubscription<T> listen(void onData(event), {Function onError, void onDone(), bool cancelOnError}) {
+    var subscriptions = <StreamSubscription<T>>[];
     var doneCounter = 0;
 
-    var controller = new StreamController(
+    var controller = new StreamController<T>(
         onCancel: () => subscriptions.forEach((subscription) => subscription.cancel()),
         onPause: () => subscriptions.forEach((subscription) => subscription.pause()),
         onResume: () => subscriptions.forEach((subscription) => subscription.resume()));
