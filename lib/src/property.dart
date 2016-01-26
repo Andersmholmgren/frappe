@@ -125,7 +125,8 @@ class Property<T> extends Reactable<T> {
 
   Property flatMap(Stream convert(T event)) => transform(new FlatMap(convert));
 
-  Property flatMapLatest(Stream convert(T event)) => transform(new FlatMapLatest(convert));
+  Property /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+    transform(new FlatMapLatest(convert));
 
   Property<T> handleError(Function onError, {bool test(error)}) =>
       new Property.fromStream(super.handleError(onError, test: test));

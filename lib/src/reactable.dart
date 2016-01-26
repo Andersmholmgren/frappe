@@ -263,7 +263,7 @@ abstract class Reactable<T> extends Stream<T> {
   ///     controller.add(2);
   ///
   ///     // 3
-  Reactable flatMapLatest(Stream convert(T event));
+  Reactable /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event));
 
   /// Returns a property that indicates if this reactable is waiting for an event from
   /// another stream.
@@ -527,7 +527,7 @@ abstract class Reactable<T> extends Stream<T> {
   Reactable timeout(Duration timeLimit, {void onTimeout(EventSink sink)});
 
   @override
-  Reactable transform(StreamTransformer<T, dynamic> streamTransformer);
+  Reactable/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer);
 
   /// Starts delivering events from the source stream when the signal stream
   /// delivers a value of `true`. Events are skipped when the signal stream

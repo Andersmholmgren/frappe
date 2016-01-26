@@ -114,7 +114,8 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream flatMap(Stream convert(T event)) => transform(new FlatMap(convert));
 
-  EventStream flatMapLatest(Stream convert(T event)) => transform(new FlatMapLatest(convert));
+  EventStream /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+    transform(new FlatMapLatest(convert));
 
   EventStream<T> handleError(Function onError, {bool test(error)}) =>
       new EventStream(super.handleError(onError, test: test));
@@ -158,7 +159,7 @@ class EventStream<T> extends Reactable<T> {
   EventStream timeout(Duration timeLimit, {void onTimeout(EventSink sink)}) =>
       new EventStream(super.timeout(timeLimit, onTimeout: onTimeout));
 
-  EventStream transform(StreamTransformer<T, dynamic> streamTransformer) =>
+  EventStream/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer) =>
       new EventStream(super.transform(streamTransformer));
 
   EventStream<T> when(Stream<bool> toggle) => transform(new When(toggle));
