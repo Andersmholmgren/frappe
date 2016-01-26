@@ -291,7 +291,7 @@ abstract class Reactable<T> extends Stream<T> {
   Reactable<T> handleError(Function onError, {bool test(error)});
 
   @override
-  Reactable map(convert(T event));
+  Reactable/*<R>*/  map/*<R>*/ (/*=R*/ convert(T event));
 
   /// Combines the events from two streams into a single stream. Errors occurring
   /// on any merged stream will be forwarded to the transformed stream. If the

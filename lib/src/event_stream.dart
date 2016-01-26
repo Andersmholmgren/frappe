@@ -124,9 +124,9 @@ class EventStream<T> extends Reactable<T> {
     return _controller.stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
-  EventStream map(convert(T event)) => new EventStream(super.map(convert));
+  EventStream/*<R>*/ map/*<R>*/ (/*=R*/ convert(T event)) => new EventStream(super.map(convert));
 
-  EventStream /*<R>*/ merge /*<R>*/ (Stream other) => transform(new Merge(other));
+  EventStream /*<R>*/ merge /*<R>*/ (Stream other) => transform(new Merge/*<dynamic, R>*/(other));
 
   EventStream mergeAll() => transform(new MergeAll());
 
