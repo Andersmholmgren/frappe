@@ -98,9 +98,11 @@ class Property<T> extends Reactable<T> {
   Property<T> asPropertyWithInitialValue(T initialValue) =>
       new Property.fromStreamWithInitialValue(initialValue, changes);
 
-  Property asyncExpand(Stream convert(T event)) => new Property.fromStream(super.asyncExpand(convert));
+  Property /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+    new Property.fromStream(super.asyncExpand(convert));
 
-  Property asyncMap(dynamic convert(T event)) => new Property.fromStream((super.asyncMap(convert)));
+  Property/*<R>*/ asyncMap/*<R>*/(/*=R*/ convert(T event)) =>
+    new Property.fromStream((super.asyncMap(convert)));
 
   Property<T> bufferWhen(Stream<bool> toggle) => transform(new BufferWhen(toggle));
 
