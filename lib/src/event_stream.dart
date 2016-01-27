@@ -88,10 +88,10 @@ class EventStream<T> extends Reactable<T> {
       new Property.fromStreamWithInitialValue(initialValue, this);
 
   EventStream /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
-    new EventStream(super.asyncExpand(convert));
+    new EventStream/*<R>*/(super.asyncExpand/*<R>*/(convert));
 
   EventStream/*<R>*/ asyncMap/*<R>*/(/*=R*/ convert(T event)) =>
-    new EventStream((super.asyncMap(convert)));
+    new EventStream/*<R>*/((super.asyncMap/*<R>*/(convert)));
 
   EventStream<T> bufferWhen(Stream<bool> toggle) => transform(new BufferWhen(toggle));
 
@@ -115,7 +115,7 @@ class EventStream<T> extends Reactable<T> {
   EventStream flatMap(Stream convert(T event)) => transform(new FlatMap(convert));
 
   EventStream /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
-    transform(new FlatMapLatest(convert));
+    transform/*<R>*/(new FlatMapLatest<T, dynamic /*=R*/>(convert));
 
   EventStream<T> handleError(Function onError, {bool test(error)}) =>
       new EventStream(super.handleError(onError, test: test));
@@ -124,9 +124,9 @@ class EventStream<T> extends Reactable<T> {
     return _controller.stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
-  EventStream/*<R>*/ map/*<R>*/ (/*=R*/ convert(T event)) => new EventStream(super.map(convert));
+  EventStream/*<R>*/ map/*<R>*/ (/*=R*/ convert(T event)) => new EventStream/*<R>*/(super.map(convert));
 
-  EventStream /*<R>*/ merge /*<R>*/ (Stream other) => transform(new Merge/*<dynamic, R>*/(other));
+  EventStream /*<R>*/ merge /*<R>*/ (Stream other) => transform/*<R>*/(new Merge/*<dynamic, R>*/(other));
 
   EventStream mergeAll() => transform(new MergeAll());
 
@@ -160,7 +160,7 @@ class EventStream<T> extends Reactable<T> {
       new EventStream(super.timeout(timeLimit, onTimeout: onTimeout));
 
   EventStream/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer) =>
-      new EventStream(super.transform(streamTransformer));
+      new EventStream/*<R>*/(super.transform/*<R>*/(streamTransformer));
 
   EventStream<T> when(Stream<bool> toggle) => transform(new When(toggle));
 

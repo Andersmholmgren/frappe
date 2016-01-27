@@ -99,10 +99,10 @@ class Property<T> extends Reactable<T> {
       new Property.fromStreamWithInitialValue(initialValue, changes);
 
   Property /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
-    new Property.fromStream(super.asyncExpand(convert));
+    new Property/*<R>*/.fromStream(super.asyncExpand(convert));
 
   Property/*<R>*/ asyncMap/*<R>*/(/*=R*/ convert(T event)) =>
-    new Property.fromStream((super.asyncMap(convert)));
+    new Property/*<R>*/.fromStream((super.asyncMap(convert)));
 
   Property<T> bufferWhen(Stream<bool> toggle) => transform(new BufferWhen(toggle));
 
@@ -126,7 +126,7 @@ class Property<T> extends Reactable<T> {
   Property flatMap(Stream convert(T event)) => transform(new FlatMap(convert));
 
   Property /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
-    transform(new FlatMapLatest(convert));
+    transform/*<R>*/(new FlatMapLatest<T, dynamic /*=R*/>(convert));
 
   Property<T> handleError(Function onError, {bool test(error)}) =>
       new Property.fromStream(super.handleError(onError, test: test));
@@ -143,9 +143,9 @@ class Property<T> extends Reactable<T> {
     return controller.stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
-  Property/*<R>*/  map/*<R>*/ (/*=R*/ convert(T event)) => new Property.fromStream(super.map(convert));
+  Property/*<R>*/  map/*<R>*/ (/*=R*/ convert(T event)) => new Property/*<R>*/.fromStream(super.map/*<R>*/(convert));
 
-  Property /*<R>*/ merge /*<R>*/ (Stream other) => transform(new Merge(other));
+  Property /*<R>*/ merge /*<R>*/ (Stream other) => transform/*<R>*/(new Merge/*<R>*/(other));
 
   Property mergeAll() => transform(new MergeAll());
 
@@ -179,7 +179,7 @@ class Property<T> extends Reactable<T> {
       new Property.fromStream(super.timeout(timeLimit, onTimeout: onTimeout));
 
   Property/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer) =>
-      new Property.fromStream(super.transform(streamTransformer));
+      new Property/*<R>*/.fromStream(super.transform/*<R>*/(streamTransformer));
 
   Property<T> when(Stream<bool> toggle) => transform(new When(toggle));
 
