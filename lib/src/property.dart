@@ -143,7 +143,7 @@ class Property<T> extends Reactable<T> {
     return controller.stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
-  Property/*<R>*/  map/*<R>*/ (/*=R*/ convert(T event)) => new Property/*<R>*/.fromStream(super.map/*<R>*/(convert));
+  Property/*<R>*/  map/*<R>*/ (Mapper /*<T, R>*/ convert) => new Property/*<R>*/.fromStream(super.map/*<R>*/(convert));
 
   Property /*<R>*/ merge /*<R>*/ (Stream other) => transform/*<R>*/(new Merge/*<R>*/(other));
 

@@ -114,9 +114,25 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream flatMap(Stream convert(T event)) => transform(new FlatMap(convert));
 
-  EventStream /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
-    transform/*<R>*/(new FlatMapLatest<T, dynamic /*=R*/>(convert));
+  EventStream /*<R>*/ flatMapLatest /*<R>*/ (Mapper /*<T, R>*/ convert) {
+    print(convert.runtimeType);
+    final flatMapLatest = new FlatMapLatest<T, Object /*=R*/>(convert);
+    print(flatMapLatest.runtimeType);
+    final r = transform/*<R>*/(flatMapLatest);
+    print(r.runtimeType);
 
+    return r;
+  }
+
+  EventStream /*<R>*/ flatMapLatest2 /*<R>*/ (Stream /*<R>*/ convert(T event)) {
+    print(convert.runtimeType);
+    final flatMapLatest = new FlatMapLatest<T, Object /*=R*/>(convert);
+    print(flatMapLatest.runtimeType);
+    final r = transform/*<R>*/(flatMapLatest);
+    print(r.runtimeType);
+
+    return r;
+  }
   EventStream<T> handleError(Function onError, {bool test(error)}) =>
       new EventStream(super.handleError(onError, test: test));
 
@@ -168,3 +184,4 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream zip(Stream other, Combiner combiner) => transform(new Zip<T, dynamic, dynamic>(other, combiner));
 }
+
