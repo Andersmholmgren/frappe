@@ -152,7 +152,8 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream<T> sampleEachPeriod(Duration duration) => transform(new SamplePeriodically(duration));
 
-  EventStream scan(initialValue, combine(value, T element)) => transform(new Scan(initialValue, combine));
+  EventStream/*<R>*/ scan/*<R>*/(/*=R*/ initialValue, /*=R*/ combine(/*=R*/ value, T element)) =>
+    transform/*<R>*/(new Scan/*<T, R>*/(initialValue, combine));
 
   EventStream selectFirst(Stream other) => transform(new SelectFirst(other));
 

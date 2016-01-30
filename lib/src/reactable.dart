@@ -403,7 +403,7 @@ abstract class Reactable<T> extends Stream<T> {
   ///
   ///     // [button click] .. prints: 1
   ///     // [button click] .. prints: 2
-  Reactable scan(initialValue, combine(value, T element));
+  Reactable/*<R>*/ scan/*<R>*/(/*=R*/ initialValue, /*=R*/ combine(/*=R*/ value, T element));
 
   /// Forwards events from the first stream to deliver an event.
   ///

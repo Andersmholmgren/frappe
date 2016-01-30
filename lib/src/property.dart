@@ -155,7 +155,8 @@ class Property<T> extends Reactable<T> {
 
   Property<T> sampleEachPeriod(Duration duration) => transform(new SamplePeriodically(duration));
 
-  Property scan(initialValue, combine(value, T element)) => transform(new Scan(initialValue, combine));
+  Property/*<R>*/ scan/*<R>*/(/*=R*/ initialValue, /*=R*/ combine(/*=R*/ value, T element)) =>
+    transform/*<R>*/(new Scan/*<T, R>*/(initialValue, combine));
 
   Property selectFirst(Stream other) => transform(new SelectFirst(other));
 
