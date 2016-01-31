@@ -1,586 +1,206 @@
 part of frappe;
 
-/// A [Reactable] is unifies the API between [EventStream]s and [Property]s.
-abstract class Reactable<T> extends Stream<T> {
-  /// Returns a [Property] where the current value is an iterable that contains the
-  /// latest values from a collection of [reactables].
-  ///
-  /// The supplied [reactables] can be a mixture of [Property]s and [EventStream]s,
-  /// where any [Property]s will first be converted to a stream.
-  ///
-  /// The returned [Property] will only have a value once all the [reactables] contain
-  /// a value.
-  static Property<Iterable> collect(Iterable<Reactable> reactables) {
-    return new Property.fromStream(Combine.all(reactables.toList()));
+/// An `EventStream` represents a series of discrete events. They're like a `Stream` in Dart, but
+/// extends its functionality with the methods found on [Reactable].
+///
+/// Event streams can be created from a property via [Property.asEventStream], or through one of
+/// its constructor methods. If an event stream is created from a property, its first event will be
+/// the property's current value.
+///
+/// An `EventStream` will inherit the behavior of the stream from which it originated. So if an event
+/// stream was created from a broadcast stream, it can support multiple subscriptions. Likewise, if
+/// an event stream was created from a single-subscription stream, only one subscription can be added
+/// to it. Take a look at the [article](https://www.dartlang.org/articles/broadcast-streams/) on
+/// single-subscription streams vs broadcast streams to learn more about their different behaviors.
+///
+/// Internally, properties are implemented as broadcast streams and can receive multiple subscriptions.
+///
+/// If you were to model text input using properties and streams, the individual key strokes would be
+/// events, and the resulting text is a property.
+abstract class Reactable<T, R extends Reactable<T, R>> extends Stream<T> {
+  StreamController<T> _controller;
+
+  @override
+  bool get isBroadcast => _controller.stream.isBroadcast;
+
+  /// Returns a new stream that wraps a standard Dart `Stream`.
+  Reactable(Stream<T> stream) {
+    _controller = _createControllerForStream(stream);
   }
 
-  @override
-  Reactable<T> asBroadcastStream({void onListen(StreamSubscription<T> subscription),
-                                 void onCancel(StreamSubscription<T> subscription)});
+  /// Returns a new single subscription stream that doesn't contain any events then completes.
+  Reactable.empty() : this.fromIterable([]);
 
-  /// Returns this reactable as a [Property].
-  ///
-  /// If this reactable is already a property, this this returns itself.
-  Property<T> asProperty();
+  /// Returns a new single subscription stream that contains a single event then completes.
+  Reactable.fromValue(T value) : this.fromIterable([value]);
 
-  /// Returns this reactable as a [Property] with an initial value.
-  ///
-  /// If this reactable is already a [Property], then this method returns a new [Property]
-  /// where its current value is set to [initialValue].
-  Property<T> asPropertyWithInitialValue(T initialValue);
+  /// Returns a new [Reactable] that contains events from an `Iterable`.
+  Reactable.fromIterable(Iterable<T> iterable)
+      : this(new Stream<T>.fromIterable(iterable));
 
-  /// Returns this reactable as an [EventStream].
-  @Deprecated("Expected to be removed in v0.5. Use asEventStream() instead.")
-  EventStream<T> asStream() => asEventStream();
+  /// Returns a new [Reactable] that contains a single event of the completed [future].
+  Reactable.fromFuture(Future<T> future)
+      : this(new Stream<T>.fromFuture(future));
 
-  /// Returns this reactable as an [EventStream].
-  EventStream<T> asEventStream();
+  /// Creates a stream that repeatedly emits events at period intervals.
+  ///
+  /// The event values are computed by invoking `computation`. The argument to this
+  /// callback is an integer that starts with 0 and is incremented for every event.
+  ///
+  /// If computation is omitted the event values will all be `null`.
+  Reactable.periodic(Duration period, T computation(int count))
+      : this(new Stream<T>.periodic(period, computation));
 
-  @override
-  Reactable /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event));
+  StreamController<T> _createControllerForStream(Stream<T> stream) {
+    StreamSubscription subscription;
 
-  @override
-  Reactable/*<R>*/ asyncMap /*<R>*/ (/*=R*/ convert(T event));
+    void onListen() {
+      subscription = stream.listen(_controller.add,
+          onDone: _controller.close, onError: _controller.addError);
+    }
 
-  /// Pauses the delivery of events from the source stream when the signal stream
-  /// delivers a value of `true`. The buffered events are delivered when the signal
-  /// delivers a value of `false`. Errors originating from the source and signal
-  /// streams will be forwarded to the transformed stream and will not be buffered.
-  /// If the source stream is a broadcast stream, then the transformed stream will
-  /// also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller = new StreamController();
-  ///     var signal = new StreamController();
-  ///
-  ///     var stream = new EventStream(controller.stream);
-  ///     var buffered = stream.bufferWhen(signal.stream));
-  ///
-  ///     controller.add(1);
-  ///     signal.add(true);
-  ///     controller.add(2);
-  ///
-  ///     buffered.listen(print);
-  ///
-  ///     // 1
-  Reactable<T> bufferWhen(Stream<bool> toggle);
+    void onCancel() {
+      subscription.cancel();
+    }
 
-  /// Combines the latest values of two streams using a two argument function.
-  /// The combining function will not be called until each stream delivers its
-  /// first value. After the first value of each stream is delivered, the
-  /// combining function will be invoked for each event from the source streams.
-  /// Errors occurring on the streams will be forwarded to the transformed
-  /// stream. If the source stream is a broadcast stream, then the transformed
-  /// stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller1 = new StreamController();
-  ///     var controller2 = new StreamController();
-  ///
-  ///     var combined = new EventStream(controller1.stream).combine(controller2.stream, (a, b) => a + b));
-  ///
-  ///     combined.listen(print);
-  ///
-  ///     controller1.add(1);
-  ///     controller2.add(1);
-  ///     controller1.add(2);
-  ///     controller2.add(2);
-  ///
-  ///     // 2
-  ///     // 3
-  ///     // 4
-  Reactable/*<R>*/ combine /*<R, B>*/ (Stream/*<B>*/ other, Object /*=R*/ combiner(T a, /*=B*/ b));
-
-  /// Concatenates two streams into one stream by delivering the values of the source stream,
-  /// and then delivering the values of the other stream once the source stream completes.
-  /// This means that it's possible that events from the second stream might not be included
-  /// if the source stream hasn't completed. Use `Concat.all()` to concatenate many streams.
-  ///
-  /// Errors will be forwarded from either stream, whether or not the source stream has
-  /// completed. If the source stream is a broadcast stream, then the transformed stream will
-  /// also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var source = new StreamController();
-  ///     var other = new StreamController();
-  ///
-  ///     var stream = new EventStream(source.stream).concat(other.stream));
-  ///     stream.listen(print);
-  ///
-  ///     other..add(1)..add(2);
-  ///     source..add(3)..add(4)..close();
-  ///
-  ///     // 3
-  ///     // 4
-  ///     // 1
-  ///     // 2
-  Reactable concat(Stream other);
-
-  /// Concatenates a stream of streams into a single stream, by delivering the first stream's
-  /// values, and then delivering the next stream's values after the previous stream has
-  /// completed.
-  ///
-  /// This means that it's possible that events from the second stream might not be included
-  /// if the source stream hasn't completed. Use `Concat.all()` to concatenate many streams.
-  ///
-  /// Errors will be forwarded from either stream, whether or not the source stream has
-  /// completed. If the source stream is a broadcast stream, then the transformed stream will
-  /// also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var source = new StreamController();
-  ///     var other1 = new StreamController();
-  ///     var other2 = new StreamController();
-  ///
-  ///     source..add(other1.stream)..add(other2.stream);
-  ///
-  ///     other2..add(1)..add(2);
-  ///     other1..add(3)..add(4)..close();
-  ///
-  ///     var stream = new EventStream(source.stream).concatAll());
-  ///     stream.listen(print);
-  ///
-  ///     // 3
-  ///     // 4
-  ///     // 1
-  ///     // 2
-  Reactable concatAll();
-
-  /// Delivers the last event from the source after the duration has passed
-  /// without receiving an event.
-  ///
-  /// Errors occurring on the source stream will not be ignored. If the source
-  /// stream is a broadcast stream, then the transformed stream will also be
-  /// a broadcast stream.
-  ///
-  ///     source:             asdf----asdf----
-  ///     source.debounce(2): -----f-------f--
-  ///
-  /// **Example:**
-  ///
-  ///     var controller = new StreamController();
-  ///
-  ///     var debounced = new EventStream(controller.stream).debounce(new Duration(seconds:1)));
-  ///     debounced.listen(print);
-  ///
-  ///     controller.add(1);
-  ///     controller.add(2);
-  ///     controller.add(3);
-  ///
-  ///     // 3
-  Reactable<T> debounce(Duration duration);
-
-  /// Throttles the delivery of each event by a given duration. Errors occurring
-  /// on the source stream will not be delayed. If the source stream is a broadcast
-  /// stream, then the transformed stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller = new StreamController();
-  ///     var delayed = new EventStream(controller.stream).delay(new Duration(seconds: 2)));
-  ///
-  ///     // source:              asdf----
-  ///     // source.delayed(2):   --a--s--d--f---
-  Reactable<T> delay(Duration duration);
-
-  @override
-  Reactable<T> distinct([bool equals(T previous, T next)]);
-
-  /// Invokes a side-effect function for each value, error and done event in the stream.
-  ///
-  /// This is useful for debugging, but also invoking `preventDefault` for browser events.
-  /// Side effects will only be invoked once if the transformed stream has multiple
-  /// subscribers.
-  ///
-  /// Errors occurring on the source stream will be forwarded to the returned stream, even
-  /// when passing an error handler to `DoAction`. If the source stream is a broadcast
-  /// stream, then the transformed stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller = new StreamController();
-  ///     var stream = new EventStream(controller.stream).doAction(
-  ///         (value) => print("Do Next: $value"),
-  ///         onError: (error) => print("Do Error: $error"),
-  ///         onDone: () => print("Do Done")););
-  ///
-  ///     stream.listen((value) => print("Next: $value"),
-  ///         onError: (e) => print("Error: $e"),
-  ///         onDone: () => print("Done"));
-  ///
-  ///     controller..add(1)..add(2)..close();
-  ///
-  ///     // Do Next: 1
-  ///     // Next: 1
-  ///     // Do Next: 2
-  ///     // Next: 2
-  ///     // Do Done
-  ///     // Done
-  Reactable<T> doAction(void onData(T value), {Function onError, void onDone()});
-
-  @override
-  Reactable expand(Iterable convert(T value));
-
-  /// Spawns a new stream from a function for each event in the source stream.
-  /// The returned stream will contain the events and errors from each of the
-  /// spawned streams until they're closed. If the source stream is a broadcast
-  /// stream, then the transformed stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller = new StreamController();
-  ///     var flapMapped = new EventStream(controller.stream).flatMap((value) {
-  ///       return new Stream.fromIterable([value + 1]);
-  ///     });
-  ///
-  ///     flatMapped.listen(print);
-  ///
-  ///     controller.add(1);
-  ///     controller.add(2);
-  ///
-  ///     // 2
-  ///     // 3
-  Reactable flatMap(Stream convert(T event));
-
-  /// Similar to `FlatMap`, but instead of including events from all spawned
-  /// streams, only includes the ones from the latest stream. Think of this
-  /// as stream switching.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller = new StreamController();
-  ///     var latest = new EventStream(controller.stream).flatMapLatest((value) {
-  ///       return new Stream.fromIterable([value + 1]);
-  ///     });
-  ///
-  ///     latest.listen(print);
-  ///
-  ///     controller.add(1);
-  ///     controller.add(2);
-  ///
-  ///     // 3
-  Reactable /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event));
-
-  /// Returns a property that indicates if this reactable is waiting for an event from
-  /// another stream.
-  ///
-  /// This method is useful for displaying spinners while waiting for AJAX responses.
-  ///
-  /// **Example:**
-  ///
-  ///     var source = new EventStream.single(1);
-  ///     var other = new EventStream.fromFuture(new Future.delayed(new Duration(seconds: 1)));
-  ///
-  ///     var isWaiting = source.isWaitingOn(other);
-  ///     isWaiting.listen(print);
-  ///
-  ///     // true
-  ///     // false
-  Property<bool> isWaitingOn(Stream other) {
-    return new Property.fromStreamWithInitialValue(
-        false,
-        flatMapLatest((_) => new EventStream.fromValue(true).merge(other.take(1).map((_) => false))))
-      .distinct();
+    return stream.isBroadcast
+        ? new StreamController.broadcast(
+            onListen: onListen, onCancel: onCancel, sync: true)
+        : new StreamController(
+            onListen: onListen, onCancel: onCancel, sync: true);
   }
 
-  @override
-  Reactable<T> handleError(Function onError, {bool test(error)});
+  // Overrides
 
-  @override
-  Reactable/*<R>*/  map/*<R>*/ (/*=R*/ convert(T event));
+  R asBroadcastStream(
+      {void onListen(StreamSubscription<T> subscription),
+      void onCancel(StreamSubscription<T> subscription)}) {
+    return _create /*<T>*/ (
+        super.asBroadcastStream(onListen: onListen, onCancel: onCancel));
+  }
 
-  /// Combines the events from two streams into a single stream. Errors occurring
-  /// on any merged stream will be forwarded to the transformed stream. If the
-  /// source stream is a broadcast stream, then the transformed stream will also
-  /// be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller1 = new StreamController();
-  ///     var controller2 = new StreamController();
-  ///
-  ///     var merged = new EventStream(controller1.stream).merge(controller2.stream));
-  ///
-  ///     merged.listen(print);
-  ///
-  ///     controller1.add(1);
-  ///     controller2.add(2);
-  ///     controller1.add(3);
-  ///     controller2.add(4);
-  ///
-  ///     // 1
-  ///     // 2
-  ///     // 3
-  ///     // 4
-  Reactable /*<R>*/ merge /*<R>*/ (Stream other);
+  Reactable /*=R2*/ _create /*<T2, R2 extends Reactable<T2, R2>>*/ (
+      Stream /*<T2>*/ stream);
 
-  /// Combines the events from a stream of streams into a single stream.
-  ///
-  /// The returned stream will contain the errors occurring on any stream. If the source
-  /// stream is a broadcast stream, then the transformed stream will also be a broadcast
-  /// stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var source = new StreamController();
-  ///     var stream1 = new Stream.fromIterable([1, 2]);
-  ///     var stream2 = new Stream.fromIterable([3, 4]);
-  ///
-  ///     var merged = new EventStream(source.stream).mergeAll());
-  ///     source..add(stream1)..add(stream2);
-  ///
-  ///     merged.listen(print);
-  ///
-  ///     // 1
-  ///     // 2
-  ///     // 3
-  ///     // 4
-  Reactable mergeAll();
+  R asEventStream() => this;
 
-  /// Applies the logical `!` operation to each value.
-  Reactable<bool> not() => map((value) => !value);
+  /// Returns a [Property] where the first value will be the next value from this stream.
+  Property<T> asProperty() => new Property.fromStream(this);
 
-  /// Takes the latest value of the source stream whenever the trigger stream
-  /// produces an event.
-  ///
-  /// Errors that happen on the source stream will be forwarded to the transformed
-  /// stream. If the source stream is a broadcast stream, then the transformed
-  /// stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     // values start at 0
-  ///     var source = new Stream.periodic(new Duration(seconds: 1), (i) => i);
-  ///     var trigger = new Stream.periodic(new Duration(seconds: 2), (i) => i);
-  ///
-  ///     var stream = new EventStream(source.stream).sampleOn(trigger.stream)).take(3);
-  ///
-  ///     stream.listen(print);
-  ///
-  ///     // 0
-  ///     // 2
-  ///     // 4
-  Reactable<T> sampleOn(Stream trigger);
+  /// Returns a [Property] where the first value will be the [initialValue], and values
+  /// after that will be the values from this stream.
+  Property<T> asPropertyWithInitialValue(T initialValue) =>
+      new Property.fromStreamWithInitialValue(initialValue, this);
 
-  /// Takes the latest value of the source stream at a specified interval.
-  ///
-  /// Errors that happen on the source stream will be forwarded to the transformed
-  /// stream. If the source stream is a broadcast stream, then the transformed
-  /// stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     // values start at 0
-  ///     var source = new Stream.periodic(new Duration(seconds: 1), (i) => i);
-  ///     var stream = new EventStream(source.stream).sampleEachPeriod(new Duration(seconds: 2))).take(3);
-  ///
-  ///     stream.listen(print);
-  ///
-  ///     // 0
-  ///     // 2
-  ///     // 4
-  Reactable<T> sampleEachPeriod(Duration duration);
+  EventStream /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+      _create /*<R>*/ (super.asyncExpand /*<R>*/ (convert));
 
-  /// Reduces the values of a stream into a single value by using an initial
-  /// value and an accumulator function. The function is passed the previous
-  /// accumulated value and the current value of the stream. This is useful
-  /// for maintaining state using a stream. Errors occurring on the source
-  /// stream will be forwarded to the transformed stream. If the source stream
-  /// is a broadcast stream, then the transformed stream will also be a
-  /// broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var button = new ButtonElement();
-  ///
-  ///     var clickCount = new EventStream(button.onClick).scan(0, (previous, current) => previous + 1));
-  ///
-  ///     clickCount.listen(print);
-  ///
-  ///     // [button click] .. prints: 1
-  ///     // [button click] .. prints: 2
-  Reactable/*<R>*/ scan/*<R>*/(/*=R*/ initialValue, /*=R*/ combine(/*=R*/ value, T element));
+  EventStream /*<R>*/ asyncMap /*<R>*/ (/*=R*/ convert(T event)) =>
+      _create /*<R>*/ ((super.asyncMap /*<R>*/ (convert)));
 
-  /// Forwards events from the first stream to deliver an event.
-  ///
-  /// Errors are forwarded from both streams until a stream is selected. Once a stream is selected,
-  /// only errors from the selected stream are forwarded. If the source stream is a broadcast stream,
-  /// then the transformed stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var stream1 = new Stream.periodic(new Duration(seconds: 1)).map((_) => "Stream 1");
-  ///     var stream2 = new Stream.periodic(new Duration(seconds: 2)).map((_) => "Stream 2");
-  ///
-  ///     var selected = new EventStream(stream1).selectFirst(stream2)).take(1);
-  ///     selected.listen(print);
-  ///
-  ///     // Stream 1
-  Reactable selectFirst(Stream other);
+  R bufferWhen(Stream<bool> toggle) => transform(new BufferWhen(toggle));
 
-  @override
-  Reactable<T> skip(int count);
+  EventStream combine(Stream other, Object combiner(T a, b)) =>
+      transform(new Combine(other, combiner));
 
-  @override
-  Reactable<T> skipWhile(bool test(T element));
+  EventStream concat(Stream other) => transform(new Concat<T>(other));
 
-  /// Waits to deliver events from a stream until the signal `Stream` delivers a
-  /// value. Errors that happen on the source stream will be forwarded once the
-  /// `Stream` delivers its value. Errors happening on the signal stream will be
-  /// forwarded immediately. If the source stream is a broadcast stream, then the
-  /// transformed stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var signal = new StreamController();
-  ///     var controller = new StreamController();
-  ///
-  ///     var skipStream = new EventStream(controller.stream).skipUntil(signal.stream));
-  ///
-  ///     skipStream.listen(print);
-  ///
-  ///     controller.add(1);
-  ///     controller.add(2);
-  ///     signal.add(true);
-  ///     controller.add(3);
-  ///     controller.add(4);
-  ///
-  ///     // 3
-  ///     // 4
-  Reactable<T> skipUntil(Stream signal);
+  EventStream concatAll() => transform(new ConcatAll());
 
-  /// Prepends a value to the beginning of a stream. Use [startWithValues] to prepend
-  /// multiple values.
-  ///
-  /// Errors on the source stream will be forwarded to the transformed stream. If the
-  /// source stream is a broadcast stream, then the transformed stream will also be a
-  /// broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var source = new Stream.fromIterable([2, 3]);
-  ///     var stream = new EventStream(source).startWith(1);
-  ///     stream.listen(print);
-  ///
-  ///     // 1
-  ///     // 2
-  ///     // 3
-  Reactable startWith(value);
+  R debounce(Duration duration) => transform(new Debounce<T>(duration));
 
-  /// Prepends values to the beginning of a stream.
-  ///
-  /// Errors on the source stream will be forwarded to the transformed stream. If the
-  /// source stream is a broadcast stream, then the transformed stream will also be a
-  /// broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var source = new Stream.fromIterable([3]);
-  ///     var stream = new EventStream(source).startWithValues([1, 2]);
-  ///     stream.listen(print);
-  ///
-  ///     // 1
-  ///     // 2
-  ///     // 3
-  Reactable startWithValues(Iterable values);
+  R delay(Duration duration) => transform(new Delay<T>(duration));
 
-  @override
-  Reactable<T> take(int count);
+  R distinct([bool equals(T previous, T next)]) =>
+      _create /*<T>*/ (super.distinct(equals));
 
-  /// Delivers events from the source stream until the signal `Stream` produces a value.
-  /// At which point, the transformed stream closes. The returned stream will continue
-  /// to deliver values if the signal stream closes without a value.
-  ///
-  /// This is useful for automatically cancelling a stream subscription to prevent memory
-  /// leaks. Errors that happen on the source and signal stream will be forwarded to the
-  /// transformed stream. If the source stream is a broadcast stream, then the transformed
-  /// stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var signal = new StreamController();
-  ///     var controller = new StreamController();
-  ///
-  ///     var takeUntil = new EventStream(controller.stream).takeUntil(signal.stream));
-  ///
-  ///     takeUntil.listen(print, onDone: () => print("done"));
-  ///
-  ///     controller.add(1);
-  ///     controller.add(2);
-  ///     signal.add(true);
-  ///     controller.add(3);
-  ///     controller.add(4);
-  ///
-  ///     // 1
-  ///     // 2
-  ///     // done
-  Reactable<T> takeUntil(Stream signal);
+  R doAction(void onData(T value), {Function onError, void onDone()}) =>
+      transform(new DoAction(onData, onError: onError, onDone: onDone));
 
-  @override
-  Reactable<T> takeWhile(bool test(T element));
+  EventStream expand(Iterable convert(T value)) =>
+      _create /*<T>*/ (super.expand(convert));
 
-  @override
-  Reactable timeout(Duration timeLimit, {void onTimeout(EventSink sink)});
+  EventStream flatMap(Stream convert(T event)) =>
+      transform(new FlatMap(convert));
 
-  @override
-  Reactable/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer);
+  EventStream /*<R>*/ flatMapLatest /*<R>*/ (Mapper /*<T, R>*/ convert) {
+    print(convert.runtimeType);
+    final flatMapLatest = new FlatMapLatest<T, Object /*=R*/ >(convert);
+    print(flatMapLatest.runtimeType);
+    final r = transform /*<R>*/ (flatMapLatest);
+    print(r.runtimeType);
 
-  /// Starts delivering events from the source stream when the signal stream
-  /// delivers a value of `true`. Events are skipped when the signal stream
-  /// delivers a value of `false`. Errors from the source or toggle stream will be
-  /// forwarded to the transformed stream. If the source stream is a broadcast
-  /// stream, then the transformed stream will also be a broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller = new StreamController();
-  ///     var signal = new StreamController();
-  ///
-  ///     var whenStream = new EventStream(controller.stream).when(signal.stream));
-  ///
-  ///     whenStream.listen(print);
-  ///
-  ///     controller.add(1);
-  ///     signal.add(true);
-  ///     controller.add(2);
-  ///     signal.add(false);
-  ///     controller.add(3);
-  ///
-  ///     // 2
-  Reactable<T> when(Stream<bool> toggle);
+    return r;
+  }
 
-  @override
-  Reactable<T> where(bool test(T event));
+  EventStream /*<R>*/ flatMapLatest2 /*<R>*/ (Stream /*<R>*/ convert(T event)) {
+    print(convert.runtimeType);
+    final flatMapLatest = new FlatMapLatest<T, Object /*=R*/ >(convert);
+    print(flatMapLatest.runtimeType);
+    final r = transform /*<R>*/ (flatMapLatest);
+    print(r.runtimeType);
 
-  /// Combines the events of two streams into one by invoking a combiner function
-  /// that is invoked when each stream delivers an event at each index. The
-  /// transformed stream finishes when either source stream finishes. Errors from
-  /// either stream will be forwarded to the transformed stream. If the source
-  /// stream is a broadcast stream, then the transformed stream will also be a
-  /// broadcast stream.
-  ///
-  /// **Example:**
-  ///
-  ///     var controller1 = new StreamController();
-  ///     var controller2 = new StreamController();
-  ///
-  ///     var zipped = new EventStream(controller1.stream).zip(controller2.stream, (a, b) => a + b));
-  ///
-  ///     zipped.listen(print);
-  ///
-  ///     controller1.add(1);
-  ///     controller1.add(2);
-  ///     controller2.add(1);
-  ///     controller1.add(3);
-  ///     controller2.add(2);
-  ///     controller2.add(3);
-  ///
-  ///     // 2
-  ///     // 4
-  ///     // 6
-  Reactable zip(Stream other, Combiner combiner);
+    return r;
+  }
+
+  R handleError(Function onError, {bool test(error)}) =>
+      _create /*<T>*/ (super.handleError(onError, test: test));
+
+  StreamSubscription<T> listen(void onData(T event),
+      {Function onError, void onDone(), bool cancelOnError}) {
+    return _controller.stream.listen(onData,
+        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+  }
+
+  EventStream /*<R>*/ map /*<R>*/ (/*=R*/ convert(T event)) =>
+      _create /*<R>*/ (super.map(convert));
+
+  EventStream /*<R>*/ merge /*<R>*/ (Stream other) =>
+      transform /*<R>*/ (new Merge /*<dynamic, R>*/ (other));
+
+  EventStream mergeAll() => transform(new MergeAll());
+
+  EventStream<bool> not() => super.not();
+
+  R sampleOn(Stream trigger) => transform(new SampleOn(trigger));
+
+  R sampleEachPeriod(Duration duration) =>
+      transform(new SamplePeriodically(duration));
+
+  EventStream /*<R>*/ scan /*<R>*/ (
+          /*=R*/ initialValue, /*=R*/ combine(/*=R*/ value, T element)) =>
+      transform /*<R>*/ (new Scan /*<T, R>*/ (initialValue, combine));
+
+  EventStream selectFirst(Stream other) => transform(new SelectFirst(other));
+
+  R skip(int count) => _create /*<T>*/ (super.skip(count));
+
+  R skipWhile(bool test(T element)) => _create /*<T>*/ (super.skipWhile(test));
+
+  R skipUntil(Stream signal) => transform(new SkipUntil(signal));
+
+  EventStream startWith(value) => transform(new StartWith(value));
+
+  EventStream startWithValues(Iterable values) =>
+      transform(new StartWith<T>.many(values));
+
+  R take(int count) => _create /*<T>*/ (super.take(count));
+
+  R takeUntil(Stream signal) => transform(new TakeUntil(signal));
+
+  R takeWhile(bool test(T element)) => _create /*<T>*/ (super.takeWhile(test));
+
+  EventStream timeout(Duration timeLimit, {void onTimeout(EventSink sink)}) =>
+      _create /*<T>*/ (super.timeout(timeLimit, onTimeout: onTimeout));
+
+  EventStream /*<R>*/ transform /*<R>*/ (
+          StreamTransformer<T, dynamic /*=R*/ > streamTransformer) =>
+      _create /*<R>*/ (super.transform /*<R>*/ (streamTransformer));
+
+  R when(Stream<bool> toggle) => transform(new When(toggle));
+
+  R where(bool test(T event)) => _create /*<T>*/ (super.where(test));
+
+  EventStream zip(Stream other, Combiner combiner) =>
+      transform(new Zip<T, dynamic, dynamic>(other, combiner));
 }
