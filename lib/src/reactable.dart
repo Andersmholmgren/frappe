@@ -91,7 +91,7 @@ abstract class Reactable<T> extends Stream<T> {
   ///     // 2
   ///     // 3
   ///     // 4
-  Reactable combine(Stream other, Object combiner(T a, b));
+  Reactable/*<R>*/ combine /*<R, B>*/ (Stream/*<B>*/ other, Object /*=R*/ combiner(T a, /*=B*/ b));
 
   /// Concatenates two streams into one stream by delivering the values of the source stream,
   /// and then delivering the values of the other stream once the source stream completes.
