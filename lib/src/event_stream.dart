@@ -114,9 +114,9 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream flatMap(Stream convert(T event)) => transform(new FlatMap(convert));
 
-  EventStream /*<R>*/ flatMapLatest /*<R>*/ (Mapper /*<T, R>*/ convert) {
+  EventStream /*<R>*/ flatMapLatest /*<R>*/ (Mapper /*<T, Stream<R>>*/ convert) {
     print(convert.runtimeType);
-    final flatMapLatest = new FlatMapLatest<T, Object /*=R*/>(convert);
+    final flatMapLatest = new FlatMapLatest<T, Object /*=Stream<R>*/>(convert);
     print(flatMapLatest.runtimeType);
     final r = transform/*<R>*/(flatMapLatest);
     print(r.runtimeType);
