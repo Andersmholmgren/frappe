@@ -90,7 +90,7 @@ class EventStream<T> extends Reactable<T> {
   EventStream /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
     new EventStream/*<R>*/(super.asyncExpand/*<R>*/(convert));
 
-  EventStream/*<R>*/ asyncMap/*<R>*/(/*=R*/ convert(T event)) =>
+  EventStream/*<R>*/ asyncMap/*<R>*/(convert(T event)) =>
     new EventStream/*<R>*/((super.asyncMap/*<R>*/(convert)));
 
   EventStream<T> bufferWhen(Stream<bool> toggle) => transform(new BufferWhen(toggle));

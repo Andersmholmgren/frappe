@@ -40,7 +40,7 @@ abstract class Reactable<T> extends Stream<T> {
   Reactable /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event));
 
   @override
-  Reactable/*<R>*/ asyncMap /*<R>*/ (/*=R*/ convert(T event));
+  Reactable/*<R>*/ asyncMap /*<R>*/ (convert(T event));
 
   /// Pauses the delivery of events from the source stream when the signal stream
   /// delivers a value of `true`. The buffered events are delivered when the signal
