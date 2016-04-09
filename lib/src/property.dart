@@ -98,9 +98,11 @@ class Property<T> extends Reactable<T> {
   Property<T> asPropertyWithInitialValue(T initialValue) =>
       new Property.fromStreamWithInitialValue(initialValue, changes);
 
-  Property asyncExpand(Stream convert(T event)) => new Property.fromStream(super.asyncExpand(convert));
+  Property /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+    new Property/*<R>*/.fromStream(super.asyncExpand(convert));
 
-  Property asyncMap(dynamic convert(T event)) => new Property.fromStream((super.asyncMap(convert)));
+  Property/*<R>*/ asyncMap/*<R>*/(convert(T event)) =>
+    new Property/*<R>*/.fromStream((super.asyncMap(convert)));
 
   Property<T> bufferWhen(Stream<bool> toggle) => transform(new BufferWhen(toggle));
 
@@ -123,7 +125,8 @@ class Property<T> extends Reactable<T> {
 
   Property flatMap(Stream convert(T event)) => transform(new FlatMap(convert));
 
-  Property flatMapLatest(Stream convert(T event)) => transform(new FlatMapLatest(convert));
+  Property /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+    transform/*<R>*/(new FlatMapLatest<T, dynamic /*=R*/>(convert));
 
   Property<T> handleError(Function onError, {bool test(error)}) =>
       new Property.fromStream(super.handleError(onError, test: test));
@@ -140,9 +143,9 @@ class Property<T> extends Reactable<T> {
     return controller.stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
-  Property map(convert(T event)) => new Property.fromStream(super.map(convert));
+  Property/*<R>*/  map/*<R>*/ (Mapper /*<T, R>*/ convert) => new Property/*<R>*/.fromStream(super.map/*<R>*/(convert));
 
-  Property merge(Stream other) => transform(new Merge(other));
+  Property /*<R>*/ merge /*<R>*/ (Stream other) => transform/*<R>*/(new Merge/*<R>*/(other));
 
   Property mergeAll() => transform(new MergeAll());
 
@@ -152,7 +155,8 @@ class Property<T> extends Reactable<T> {
 
   Property<T> sampleEachPeriod(Duration duration) => transform(new SamplePeriodically(duration));
 
-  Property scan(initialValue, combine(value, T element)) => transform(new Scan(initialValue, combine));
+  Property/*<R>*/ scan/*<R>*/(/*=R*/ initialValue, /*=R*/ combine(/*=R*/ value, T element)) =>
+    transform/*<R>*/(new Scan/*<T, R>*/(initialValue, combine));
 
   Property selectFirst(Stream other) => transform(new SelectFirst(other));
 
@@ -175,8 +179,8 @@ class Property<T> extends Reactable<T> {
   Property timeout(Duration timeLimit, {void onTimeout(EventSink sink)}) =>
       new Property.fromStream(super.timeout(timeLimit, onTimeout: onTimeout));
 
-  Property transform(StreamTransformer<T, dynamic> streamTransformer) =>
-      new Property.fromStream(super.transform(streamTransformer));
+  Property/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer) =>
+      new Property/*<R>*/.fromStream(super.transform/*<R>*/(streamTransformer));
 
   Property<T> when(Stream<bool> toggle) => transform(new When(toggle));
 

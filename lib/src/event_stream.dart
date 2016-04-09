@@ -87,9 +87,11 @@ class EventStream<T> extends Reactable<T> {
   Property<T> asPropertyWithInitialValue(T initialValue) =>
       new Property.fromStreamWithInitialValue(initialValue, this);
 
-  EventStream asyncExpand(Stream convert(T event)) => new EventStream(super.asyncExpand(convert));
+  EventStream /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event)) =>
+    new EventStream/*<R>*/(super.asyncExpand/*<R>*/(convert));
 
-  EventStream asyncMap(dynamic convert(T event)) => new EventStream((super.asyncMap(convert)));
+  EventStream/*<R>*/ asyncMap/*<R>*/(convert(T event)) =>
+    new EventStream/*<R>*/((super.asyncMap/*<R>*/(convert)));
 
   EventStream<T> bufferWhen(Stream<bool> toggle) => transform(new BufferWhen(toggle));
 
@@ -112,8 +114,25 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream flatMap(Stream convert(T event)) => transform(new FlatMap(convert));
 
-  EventStream flatMapLatest(Stream convert(T event)) => transform(new FlatMapLatest(convert));
+  EventStream /*<R>*/ flatMapLatest /*<R>*/ (Mapper /*<T, Stream<R>>*/ convert) {
+    print(convert.runtimeType);
+    final flatMapLatest = new FlatMapLatest<T, Object /*=Stream<R>*/>(convert);
+    print(flatMapLatest.runtimeType);
+    final r = transform/*<R>*/(flatMapLatest);
+    print(r.runtimeType);
 
+    return r;
+  }
+
+  EventStream /*<R>*/ flatMapLatest2 /*<R>*/ (Stream /*<R>*/ convert(T event)) {
+    print(convert.runtimeType);
+    final flatMapLatest = new FlatMapLatest<T, Object /*=R*/>(convert);
+    print(flatMapLatest.runtimeType);
+    final r = transform/*<R>*/(flatMapLatest);
+    print(r.runtimeType);
+
+    return r;
+  }
   EventStream<T> handleError(Function onError, {bool test(error)}) =>
       new EventStream(super.handleError(onError, test: test));
 
@@ -121,9 +140,9 @@ class EventStream<T> extends Reactable<T> {
     return _controller.stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
-  EventStream map(convert(T event)) => new EventStream(super.map(convert));
+  EventStream/*<R>*/ map/*<R>*/ (/*=R*/ convert(T event)) => new EventStream/*<R>*/(super.map(convert));
 
-  EventStream merge(Stream other) => transform(new Merge(other));
+  EventStream /*<R>*/ merge /*<R>*/ (Stream other) => transform/*<R>*/(new Merge/*<dynamic, R>*/(other));
 
   EventStream mergeAll() => transform(new MergeAll());
 
@@ -133,7 +152,8 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream<T> sampleEachPeriod(Duration duration) => transform(new SamplePeriodically(duration));
 
-  EventStream scan(initialValue, combine(value, T element)) => transform(new Scan(initialValue, combine));
+  EventStream/*<R>*/ scan/*<R>*/(/*=R*/ initialValue, /*=R*/ combine(/*=R*/ value, T element)) =>
+    transform/*<R>*/(new Scan/*<T, R>*/(initialValue, combine));
 
   EventStream selectFirst(Stream other) => transform(new SelectFirst(other));
 
@@ -156,8 +176,8 @@ class EventStream<T> extends Reactable<T> {
   EventStream timeout(Duration timeLimit, {void onTimeout(EventSink sink)}) =>
       new EventStream(super.timeout(timeLimit, onTimeout: onTimeout));
 
-  EventStream transform(StreamTransformer<T, dynamic> streamTransformer) =>
-      new EventStream(super.transform(streamTransformer));
+  EventStream/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer) =>
+      new EventStream/*<R>*/(super.transform/*<R>*/(streamTransformer));
 
   EventStream<T> when(Stream<bool> toggle) => transform(new When(toggle));
 
@@ -165,3 +185,4 @@ class EventStream<T> extends Reactable<T> {
 
   EventStream zip(Stream other, Combiner combiner) => transform(new Zip<T, dynamic, dynamic>(other, combiner));
 }
+

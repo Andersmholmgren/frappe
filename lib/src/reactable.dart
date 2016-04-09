@@ -37,10 +37,10 @@ abstract class Reactable<T> extends Stream<T> {
   EventStream<T> asEventStream();
 
   @override
-  Reactable asyncExpand(Stream convert(T event));
+  Reactable /*<R>*/ asyncExpand /*<R>*/ (Stream /*<R>*/ convert(T event));
 
   @override
-  Reactable asyncMap(dynamic convert(T event));
+  Reactable/*<R>*/ asyncMap /*<R>*/ (convert(T event));
 
   /// Pauses the delivery of events from the source stream when the signal stream
   /// delivers a value of `true`. The buffered events are delivered when the signal
@@ -91,7 +91,7 @@ abstract class Reactable<T> extends Stream<T> {
   ///     // 2
   ///     // 3
   ///     // 4
-  Reactable combine(Stream other, Object combiner(T a, b));
+  Reactable/*<R>*/ combine /*<R, B>*/ (Stream/*<B>*/ other, Object /*=R*/ combiner(T a, /*=B*/ b));
 
   /// Concatenates two streams into one stream by delivering the values of the source stream,
   /// and then delivering the values of the other stream once the source stream completes.
@@ -263,7 +263,7 @@ abstract class Reactable<T> extends Stream<T> {
   ///     controller.add(2);
   ///
   ///     // 3
-  Reactable flatMapLatest(Stream convert(T event));
+  Reactable /*<R>*/ flatMapLatest /*<R>*/ (Stream /*<R>*/ convert(T event));
 
   /// Returns a property that indicates if this reactable is waiting for an event from
   /// another stream.
@@ -291,7 +291,7 @@ abstract class Reactable<T> extends Stream<T> {
   Reactable<T> handleError(Function onError, {bool test(error)});
 
   @override
-  Reactable map(convert(T event));
+  Reactable/*<R>*/  map/*<R>*/ (/*=R*/ convert(T event));
 
   /// Combines the events from two streams into a single stream. Errors occurring
   /// on any merged stream will be forwarded to the transformed stream. If the
@@ -316,7 +316,7 @@ abstract class Reactable<T> extends Stream<T> {
   ///     // 2
   ///     // 3
   ///     // 4
-  Reactable merge(Stream other);
+  Reactable /*<R>*/ merge /*<R>*/ (Stream other);
 
   /// Combines the events from a stream of streams into a single stream.
   ///
@@ -403,7 +403,7 @@ abstract class Reactable<T> extends Stream<T> {
   ///
   ///     // [button click] .. prints: 1
   ///     // [button click] .. prints: 2
-  Reactable scan(initialValue, combine(value, T element));
+  Reactable/*<R>*/ scan/*<R>*/(/*=R*/ initialValue, /*=R*/ combine(/*=R*/ value, T element));
 
   /// Forwards events from the first stream to deliver an event.
   ///
@@ -527,7 +527,7 @@ abstract class Reactable<T> extends Stream<T> {
   Reactable timeout(Duration timeLimit, {void onTimeout(EventSink sink)});
 
   @override
-  Reactable transform(StreamTransformer<T, dynamic> streamTransformer);
+  Reactable/*<R>*/ transform/*<R>*/(StreamTransformer<T, dynamic /*=R*/> streamTransformer);
 
   /// Starts delivering events from the source stream when the signal stream
   /// delivers a value of `true`. Events are skipped when the signal stream

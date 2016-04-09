@@ -1,19 +1,17 @@
-name: frappe
-version: 0.4.0+6
-description: >
-  A functional reactive programming library for Dart. Frappé extends the functionality
-  of Dart's streams, and introduces new concepts like properties/signals.
-authors:
-  - Dan Schultz <schultz.t.dan@gmail.com>
-  - Anders Holmgren
-  - Aaron Washington
-homepage: http://www.github.com/danschultz/frappe
-environment:
-  sdk: '>=1.8.0'
-dependencies:
-  stream_transformers: ^0.3.0
-dev_dependencies:
-  browser: ^0.10.0
-  grinder: '>=0.7.0 <0.7.1'
-  guinness: ^0.1.6
-  unittest: ^0.11.0
+description: "A functional reactive programming library for Dart. Frappé extends the functionality of Dart's streams, and introduces new concepts like properties/signals.\n"
+homepage: "http://www.github.com/danschultz/frappe"
+name: "frappe"
+version: "0.4.0+6"
+dependencies: 
+  stream_transformers: '^0.3.0'
+dev_dependencies: 
+  browser: '^0.10.0'
+  grinder: '>=0.8.0+2 <0.9.0'
+  guinness: '^0.1.6'
+  unittest: '>=0.11.0 <0.13.0'
+environment: 
+  sdk: ">=1.8.0"
+authors: 
+  - "Dan Schultz <schultz.t.dan@gmail.com>"
+  - "Anders Holmgren"
+  - "Aaron Washington"
